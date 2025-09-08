@@ -4,32 +4,34 @@ const cron = require('node-cron');
 module.exports = {
   init(client) {
     const channelId = process.env.YOUTUBE_FEED_CHANNEL_ID;
-    const feedUrl = process.env.YOUTUBE_RSS_URL;
-    if (!channelId || !feedUrl) return;
+    const urls = (process.env.YOUTUBE_RSS_URLS || "").split(",").map(u => u.trim()).filter(Boolean);
+    if (!channelId || urls.length === 0) return;
 
     const parser = new Parser();
-    let lastVideoId = null;
+    const lastVideos = {};
 
     // cek tiap 10 menit
     cron.schedule("*/10 * * * *", async () => {
-      try {
-        const feed = await parser.parseURL(feedUrl);
-        if (!feed || !feed.items || feed.items.length === 0) return;
+      for (const feedUrl of urls) {
+        try {
+          const feed = await parser.parseURL(feedUrl);
+          if (!feed || !feed.items || feed.items.length === 0) continue;
 
-        const latest = feed.items[0];
-        if (!latest || !latest.link) return;
+          const latest = feed.items[0];
+          if (!latest || !latest.link) continue;
 
-        // ambil ID video dari link
-        const videoId = latest.link.split("v=")[1];
-        if (lastVideoId === videoId) return; // sudah pernah dipost
+          const videoId = latest.link.split("v=")[1];
+          if (lastVideos[feedUrl] === videoId) continue; // sudah dipost sebelumnya
 
-        lastVideoId = videoId;
-        const channel = client.channels.cache.get(channelId);
-        if (channel) {
-          channel.send(`🎬 Video baru dari **${feed.title}**!\n${latest.link}`);
+          lastVideos[feedUrl] = videoId;
+
+          const channel = client.channels.cache.get(channelId);
+          if (channel) {
+            channel.send(`🎬 Video baru dari **${feed.title}**!\n${latest.link}`);
+          }
+        } catch (err) {
+          console.error("YouTube feed fetch error:", err.message);
         }
-      } catch (err) {
-        console.error("YouTube feed fetch error:", err);
       }
     }, { timezone: "Asia/Makassar" });
   }
