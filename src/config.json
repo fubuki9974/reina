@@ -1,6 +1,6 @@
 {
   "welcome": {
-    "image_url": "https://i.imgur.com/AfFp7pu.png",
+    "image_url": "https://cdn.discordapp.com/attachments/1361886141397340371/1414241266115285104/08f04819c687b31b954595d766ca21ef84c918a6_2_650x265.png?ex=68bf8311&is=68be3191&hm=ec211ad398335584d77b781f9d45501c289dbbe35a3f2b04ea1de549143c1052&",
     "welcome_message": "Selamat datang, {user}! Semoga betah."
   },
   "quote": {
@@ -9,8 +9,13 @@
     "api": "https://api.quotable.io/random"
   },
   "reactionRoles": {
-    "messageId": "",
-    "roles": []
+    "messageId": "1414605391438024844",
+    "roles": [
+      { "emoji": "🦖", "roleId": "1361886138633027630", "label": "Gamer" },
+    { "emoji": "🐈", "roleId": "1361886138633027626", "label": "Artist" },
+    { "emoji": "🦋", "roleId": "1361886138633027629", "label": "Student" },
+      { "emoji": "🦀", "roleId": "1361886138633027627", "label": "Student" }
+    ]
   },
   "automod": {
     "bannedWords": [
