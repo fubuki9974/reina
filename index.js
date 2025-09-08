@@ -1,29 +1,44 @@
-const { Client, GatewayIntentBits, Partials } = require("discord.js");
-require("dotenv").config();
+const fs = require('fs');
+const { Client, GatewayIntentBits, Partials, Collection } = require('discord.js');
+require('dotenv').config();
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildBans
   ],
-  partials: [Partials.Message, Partials.Channel, Partials.Reaction],
+  partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
 
-client.once("ready", () => {
-  console.log(`✅ Logged in as ${client.user.tag}`);
+client.config = require('./src/config.json');
+client.features = {};
+client.logger = require('./src/features/logs');
 
-  // === Fitur ===
-  require("./features/welcome").init(client);        // Welcome embed
-  require("./features/quotes").init(client);         // Auto quote jam 7 pagi
-  require("./features/reactionRole").init(client);   // Reaction role
-  require("./features/automod").init(client);        // Auto mod
-  require("./features/logs").init(client);           // Logging
-  require("./features/youtubeFeed").init(client);    // YouTube feed
-  require("./features/githubFeed").init(client);     // GitHub feed
-  require("./features/animeWallpaper").init(client); // Anime wallpaper auto post
+const featuresPath = './src/features';
+fs.readdirSync(featuresPath).forEach(file => {
+  if (file.endsWith('.js')) {
+    const f = require(${featuresPath}/${file});
+    if (typeof f.init === 'function') f.init(client);
+    client.features[file.replace('.js','')] = f;
+  }
 });
 
-client.login(process.env.DISCORD_TOKEN);
+// load events
+const eventsPath = './src/events';
+fs.readdirSync(eventsPath).forEach(file => {
+  if (file.endsWith('.js')) {
+    const event = require(${eventsPath}/${file});
+    if (event.name && event.execute) {
+      if (event.once) client.once(event.name, (...args) => event.execute(client, ...args));
+      else client.on(event.name, (...args) => event.execute(client, ...args));
+    }
+  }
+});
+
+client.login(process.env.DISCORD_TOKEN).catch(err=>{
+  console.error('Failed to login. Did you set DISCORD_TOKEN in .env?', err);
+});
