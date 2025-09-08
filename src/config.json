@@ -1,0 +1,22 @@
+{
+  "welcome": {
+    "image_url": "https://i.imgur.com/AfFp7pu.png",
+    "welcome_message": "Selamat datang, {user}! Semoga betah."
+  },
+  "quote": {
+    "enabled": true,
+    "cron": "0 7 * * *",
+    "api": "https://api.quotable.io/random"
+  },
+  "reactionRoles": {
+    "messageId": "",
+    "roles": []
+  },
+  "automod": {
+    "bannedWords": [
+      "badword1",
+      "badword2"
+    ],
+    "maxLinks": 3
+  }
+}
