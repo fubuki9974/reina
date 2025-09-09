@@ -1,25 +1,36 @@
+const { Events } = require("discord.js");
 const { embedLogger } = require("../utils/embedLogger");
 
 module.exports = (client) => {
-  const logChannel = () => client.channels.cache.get(process.env.LOG_CHANNEL_ID);
+  const logChannelId = process.env.LOG_CHANNEL_ID; // pastikan sudah ada di .env / Env Vars Railway
+  if (!logChannelId) return console.warn("LOG_CHANNEL_ID belum diatur.");
 
-  client.on("messageDelete", async (message) => {
-    if (!message.guild) return;
-    const channel = logChannel();
-    if (!channel) return;
+  const logChannel = () => client.channels.cache.get(logChannelId);
 
-    channel.send({
-      embeds: [embedLogger("🗑 Pesan Dihapus", `${message.author?.tag || "Unknown"} di <#${message.channel.id}>:\n${message.content || "[Embed/Attachment]"}`, 0xFF0000)]
-    });
+  // Log pesan dihapus
+  client.on(Events.MessageDelete, (message) => {
+    if (!message.guild || message.author?.bot) return;
+
+    const embed = embedLogger(
+      "🗑 Pesan Dihapus",
+      `**Author:** ${message.author.tag}\n**Channel:** ${message.channel}\n**Isi:** ${message.content || "Tidak ada teks"}`
+    );
+
+    logChannel()?.send({ embeds: [embed] }).catch(console.error);
   });
 
-  client.on("messageUpdate", async (oldMsg, newMsg) => {
-    if (!oldMsg.guild || oldMsg.content === newMsg.content) return;
-    const channel = logChannel();
-    if (!channel) return;
+  // Log pesan diedit
+  client.on(Events.MessageUpdate, (oldMessage, newMessage) => {
+    if (!oldMessage.guild || oldMessage.author?.bot) return;
+    if (oldMessage.content === newMessage.content) return;
 
-    channel.send({
-      embeds: [embedLogger("✏️ Pesan Diedit", `Sebelum: ${oldMsg.content || "[Kosong]"}\nSesudah: ${newMsg.content || "[Kosong]"}`, 0xFFA500)]
-    });
+    const embed = embedLogger(
+      "✏️ Pesan Diedit",
+      `**Author:** ${oldMessage.author.tag}\n**Channel:** ${oldMessage.channel}\n**Sebelum:** ${oldMessage.content || "Tidak ada teks"}\n**Sesudah:** ${newMessage.content || "Tidak ada teks"}`
+    );
+
+    logChannel()?.send({ embeds: [embed] }).catch(console.error);
   });
+
+  console.log("✅ Fitur messageLogger siap.");
 };
