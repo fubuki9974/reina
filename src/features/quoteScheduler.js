@@ -1,25 +1,21 @@
-const cron = require('node-cron');
-const axios = require('axios');
+const axios = require("axios");
+const cron = require("node-cron");
 
-module.exports = {
-  init(client) {
-    const q = client.config.quote;
-    if (!q || !q.enabled) return;
-    // schedule using cron expression from config (server time)
-    cron.schedule(q.cron, async () => {
+module.exports = (client) => {
+  client.on("clientReady", () => {
+    const channelId = process.env.QUOTE_CHANNEL_ID; // set di .env
+
+    // tiap jam 7 pagi
+    cron.schedule("0 7 * * *", async () => {
+      const channel = client.channels.cache.get(channelId);
+      if (!channel) return;
+
       try {
-        const res = await axios.get(q.api);
-        const data = res.data;
-        const text = data.content || data.quote || JSON.stringify(data);
-        const author = data.author ? ` — ${data.author}` : '';
-        const chId = process.env.QUOTE_CHANNEL_ID;
-        if (!chId) return;
-        const ch = client.channels.cache.get(chId);
-        if (!ch) return;
-        ch.send(`"${text}"${author}`).catch(console.error);
+        const res = await axios.get("https://api.quotable.io/random");
+        channel.send(`💡 Quote hari ini:\n\n*"${res.data.content}"* — ${res.data.author}`);
       } catch (err) {
-        console.error('Quote fetch failed', err);
+        console.error("Gagal ambil quote:", err.message);
       }
-    }, { timezone: 'Asia/Makassar' });
-  }
+    });
+  });
 };
