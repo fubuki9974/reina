@@ -1,38 +1,27 @@
-const Parser = require('rss-parser');
-const cron = require('node-cron');
+const Parser = require("rss-parser");
+const cron = require("node-cron");
+const parser = new Parser();
 
-module.exports = {
-  init(client) {
+module.exports = (client) => {
+  client.on("clientReady", () => {
     const channelId = process.env.GITHUB_FEED_CHANNEL_ID;
-    const urls = (process.env.GITHUB_RSS_URLS || "").split(",").map(u => u.trim()).filter(Boolean);
-    if (!channelId || urls.length === 0) return;
+    const feeds = (process.env.GITHUB_FEED_URLS || "").split(",");
 
-    const parser = new Parser();
-    const lastCommits = {};
+    cron.schedule("*/15 * * * *", async () => {
+      const channel = client.channels.cache.get(channelId);
+      if (!channel) return;
 
-    // cek tiap 10 menit
-    cron.schedule("*/10 * * * *", async () => {
-      for (const feedUrl of urls) {
+      for (const url of feeds) {
         try {
-          const feed = await parser.parseURL(feedUrl);
-          if (!feed || !feed.items || feed.items.length === 0) continue;
-
-          const latest = feed.items[0];
-          if (!latest || !latest.link) continue;
-
-          const commitId = latest.id || latest.link;
-          if (lastCommits[feedUrl] === commitId) continue; // sudah dipost
-
-          lastCommits[feedUrl] = commitId;
-
-          const channel = client.channels.cache.get(channelId);
-          if (channel) {
-            channel.send(`📝 Commit baru di **${feed.title}**\n**${latest.title}**\n${latest.link}`);
+          const feed = await parser.parseURL(url);
+          if (feed.items.length > 0) {
+            const latest = feed.items[0];
+            channel.send(`🐙 Commit baru di **${feed.title}**:\n${latest.link}`);
           }
         } catch (err) {
-          console.error("GitHub feed fetch error:", err.message);
+          console.error("Gagal ambil feed GitHub:", err.message);
         }
       }
-    }, { timezone: "Asia/Makassar" });
-  }
+    });
+  });
 };
