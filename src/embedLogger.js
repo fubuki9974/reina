@@ -1,24 +1,11 @@
 const { EmbedBuilder } = require("discord.js");
 
-function createLogEmbed({ color, title, description, fields = [] }) {
+function embedLogger(title, description, color = 0x2f3136) {
   return new EmbedBuilder()
-    .setColor(color)
     .setTitle(title)
-    .setDescription(description || null)
-    .addFields(fields)
+    .setDescription(description)
+    .setColor(color)
     .setTimestamp();
 }
 
-// 🎨 Warna standar
-const colors = {
-  delete: "Red",
-  edit: "Orange",
-  roleAdd: "Green",
-  roleRemove: "Red",
-  memberLeave: "Grey",
-  ban: "DarkRed",
-  unban: "Blue",
-  timeout: "Purple",
-};
-
-module.exports = { createLogEmbed, colors };
+module.exports = { embedLogger };
