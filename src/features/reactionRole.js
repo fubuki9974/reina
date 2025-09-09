@@ -1,27 +1,31 @@
-module.exports = {
-  init(client) {
-    // nothing on init; handler is called from reaction event
-  },
-  async handleAdd(client, reaction, user) {
+module.exports = (client) => {
+  const roleMap = {};
+  (process.env.REACTION_ROLE_MAP || "").split(",").forEach(pair => {
+    const [emoji, roleName] = pair.split(":");
+    roleMap[emoji] = roleName;
+  });
+
+  client.on("messageReactionAdd", async (reaction, user) => {
     if (user.bot) return;
-    const cfg = client.config.reactionRoles;
-    const messageId = process.env.REACTION_ROLE_MESSAGE_ID || cfg.messageId || '';
-    if (!messageId) return;
-    if (reaction.message.id !== messageId) return;
-    const emoji = reaction.emoji.id || reaction.emoji.name;
-    const mapping = (cfg.roles || []).find(r => r.emoji === emoji);
-    if (!mapping) return;
-    const guild = reaction.message.guild;
-    const member = await guild.members.fetch(user.id).catch(()=>null);
-    if (!member) return;
-    const role = guild.roles.cache.get(mapping.roleId);
-    if (!role) return;
-    if (member.roles.cache.has(role.id)) {
-      await member.roles.remove(role).catch(console.error);
-      client.logger.sendLog(client, 'Reaction Role Removed', `${member.user.tag} had role ${role.name} removed via reaction.`);
-    } else {
-      await member.roles.add(role).catch(console.error);
-      client.logger.sendLog(client, 'Reaction Role Added', `${member.user.tag} was given role ${role.name} via reaction.`);
-    }
-  }
+    if (reaction.partial) await reaction.fetch();
+
+    const roleName = roleMap[reaction.emoji.name];
+    if (!roleName) return;
+
+    const member = await reaction.message.guild.members.fetch(user.id);
+    const role = reaction.message.guild.roles.cache.find(r => r.name === roleName);
+    if (role) await member.roles.add(role);
+  });
+
+  client.on("messageReactionRemove", async (reaction, user) => {
+    if (user.bot) return;
+    if (reaction.partial) await reaction.fetch();
+
+    const roleName = roleMap[reaction.emoji.name];
+    if (!roleName) return;
+
+    const member = await reaction.message.guild.members.fetch(user.id);
+    const role = reaction.message.guild.roles.cache.find(r => r.name === roleName);
+    if (role) await member.roles.remove(role);
+  });
 };
