@@ -21,7 +21,7 @@ client.logger = require('./src/features/logs');
 const featuresPath = './src/features';
 fs.readdirSync(featuresPath).forEach(file => {
   if (file.endsWith('.js')) {
-    const f = require(${featuresPath}/${file});
+    const f = require(`${featuresPath}/${file}`);
     if (typeof f.init === 'function') f.init(client);
     client.features[file.replace('.js','')] = f;
   }
