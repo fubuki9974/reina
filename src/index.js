@@ -1,30 +1,37 @@
 const { Client, GatewayIntentBits, Partials } = require("discord.js");
-require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
+require("dotenv").config();
 
+// Buat client dengan intents & partials lengkap
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMembers,       // penting untuk welcome
+    GatewayIntentBits.GuildMessages,      // penting untuk logs
+    GatewayIntentBits.MessageContent,     // baca isi pesan
     GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildBans,          // log ban
+    GatewayIntentBits.GuildPresences
   ],
-  partials: [Partials.Message, Partials.Channel, Partials.Reaction],
+  partials: [
+    Partials.Message,
+    Partials.Channel,
+    Partials.Reaction,
+    Partials.GuildMember,
+    Partials.User,
+  ],
 });
 
-client.once("ready", () => {
-  console.log(`✅ Logged in as ${client.user.tag}`);
+// Path fitur
+const featuresPath = path.join(__dirname, "features");
 
-  // === Auto load semua fitur di folder ./features ===
-  const featuresPath = path.join(__dirname, "features");
-  const featureFiles = fs.readdirSync(featuresPath).filter(file => file.endsWith(".js"));
-
-  for (const file of featureFiles) {
+// Autoload semua fitur
+fs.readdirSync(featuresPath).forEach((file) => {
+  if (file.endsWith(".js")) {
     try {
-      const f = require(`${featuresPath}/${file}`);
-      if (f.init) f.init(client);
+      const feature = require(path.join(featuresPath, file));
+      feature(client);
       console.log(`📦 Loaded feature: ${file}`);
     } catch (err) {
       console.error(`❌ Error loading feature ${file}:`, err.message);
@@ -32,4 +39,10 @@ client.once("ready", () => {
   }
 });
 
-client.login(process.env.TOKEN);
+// Event ketika bot ready
+client.once("ready", () => {
+  console.log(`✅ Logged in as ${client.user.tag}`);
+});
+
+// Login bot
+client.login(process.env.BOT_TOKEN);
